@@ -19,7 +19,7 @@ export class QueryCore {
     ): Promise<string[]> {
         const {
             shuffle = false,
-            sourceOrder = ['google', 'wikipedia', 'reddit', 'local'],
+            sourceOrder = ['china', 'google', 'wikipedia', 'reddit', 'local'],
             related = true,
             langCode = 'en',
             geoLocale = 'US'
@@ -35,9 +35,14 @@ export class QueryCore {
             const topicLists: string[][] = []
 
             const sourceHandlers: Record<
-                'google' | 'wikipedia' | 'reddit' | 'local',
+                'china' | 'google' | 'wikipedia' | 'reddit' | 'local',
                 (() => Promise<string[]>) | (() => string[])
             > = {
+                china: async () => {
+                    const topics = await this.getChinaTrends().catch(() => [])
+                    this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', `china: ${topics.length}`)
+                    return topics
+                },
                 google: async () => {
                     const topics = await this.getGoogleTrends(geoLocale.toUpperCase()).catch(() => [])
                     this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', `google: ${topics.length}`)
@@ -243,6 +248,64 @@ export class QueryCore {
         return queryTerms.flatMap(x => [x.topic, ...x.related])
     }
 
+    private async getChinaTrends(geoLocale: string = 'CN'): Promise<string[]> {
+        const queryTerms: GoogleSearch[] = []
+
+        this.bot.logger.debug(this.bot.isMobile, 'SEARCH-CHINA-TRENDS', `正在生成搜索查询，可能需要一些时间！ | 地理区域: ${geoLocale}`)
+        var appkey = "";//从https://www.gmya.net/api 网站申请的热门词接口APIKEY
+        var Hot_words_apis = "https://api.gmya.net/Api/";// 故梦热门词API接口网站
+        //默认搜索词，热门搜索词请求失败时使用
+        //{weibohot}微博热搜榜//{douyinhot}抖音热搜榜/{zhihuhot}知乎热搜榜/{baiduhot}百度热搜榜/{toutiaohot}今日头条热搜榜/
+        var keywords_source = ['BaiduHot', 'TouTiaoHot', 'DouYinHot', 'WeiBoHot'];
+        var random_keywords_source = keywords_source[Math.floor(Math.random() * keywords_source.length)];
+        var current_source_index = 0; // 当前搜索词来源的索引
+    
+        while (current_source_index < keywords_source.length) {
+            // const source = keywords_source[current_source_index]; // 获取当前搜索词来源
+            const source = random_keywords_source; // 获取当前搜索词来源
+            let url;        
+            //根据 appkey 是否为空来决定如何构建 URL地址,如果appkey为空,则直接请求接口地址
+            if (appkey) {
+                url = Hot_words_apis + source + "?format=json&appkey=" + appkey;//有appkey则添加appkey参数
+            } else {    
+                url = Hot_words_apis + source;//无appkey则直接请求接口地址
+            }
+            try {
+                const response = await fetch(url); // 发起网络请求
+                if (!response.ok) {
+                    throw new Error('HTTP error! status: ' + response.status); // 如果响应状态不是OK，则抛出错误
+                }
+                this.bot.logger.debug(this.bot.isMobile, 'SEARCH-CHINA-TRENDS', `已经获取${source}搜索查询`)
+
+                const data = await response.json(); // 解析响应内容为JSON
+    
+                // 显式指定 item 的类型为 any，解决隐式 any 类型的问题
+                if (data.data.some((item: any) => item)) {
+                    // 如果数据中存在有效项
+                    // 提取每个元素的title属性值
+                    const names = data.data.map((item: any) => item.title);
+                    // 显式指定 name 的类型为 string，解决隐式 any 类型的问题
+                    names.forEach((name: string) => {
+                        queryTerms.push({
+                            topic: name,
+                            related: []
+                        });
+                    });
+                    return queryTerms.flatMap(x => [x.topic, ...x.related])
+                }
+            } catch (error) {
+                // 当前来源请求失败，记录错误并尝试下一个来源
+                this.bot.logger.error(this.bot.isMobile, 'SEARCH-CHINA-TRENDS', `搜索词来源请求失败: ${error}`)
+            }
+            // 尝试下一个搜索词来源
+            current_source_index++;
+        }
+    
+        // 所有搜索词来源都已尝试且失败
+        this.bot.logger.error(this.bot.isMobile, 'SEARCH-CHINA-TRENDS', `所有搜索词来源请求失败`)
+        return []
+    }
+
     private extractJsonFromResponse(text: string): GoogleTrendsResponse[1] | null {
         for (const line of text.split('\n')) {
             const trimmed = line.trim()
@@ -338,7 +401,7 @@ export class QueryCore {
                         'Bing/32.5.431027001 (com.microsoft.bing; build:431027001; iOS 17.6.1) Alamofire/5.10.2',
                     'Content-Type': 'application/json',
                     'X-Rewards-Country': this.bot.userData.geoLocale,
-                    'X-Rewards-Language': 'en',
+                    'X-Rewards-Language': this.bot.userData.langCode,
                     'X-Rewards-ismobile': 'true'
                 }
             }

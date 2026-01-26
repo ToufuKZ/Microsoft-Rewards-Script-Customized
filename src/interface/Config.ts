@@ -15,7 +15,7 @@ export interface Config {
     webhook: ConfigWebhook
 }
 
-export type QueryEngine = 'google' | 'wikipedia' | 'reddit' | 'local'
+export type QueryEngine = 'china' | 'google' | 'wikipedia' | 'reddit' | 'local'
 
 export interface ConfigSearchSettings {
     scrollRandomResults: boolean
@@ -40,6 +40,7 @@ export interface ConfigWorkers {
     doDailySet: boolean
     doSpecialPromotions: boolean
     doMorePromotions: boolean
+    doPointClaimPromotion: boolean
     doPunchCards: boolean
     doAppPromotions: boolean
     doDesktopSearch: boolean

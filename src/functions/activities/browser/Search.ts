@@ -46,9 +46,9 @@ export class Search extends Workers {
             let queries = await queryCore.queryManager({
                 shuffle: true,
                 related: true,
-                langCode,
+                langCode: langCode,
                 geoLocale: locale,
-                sourceOrder: ['google', 'wikipedia', 'reddit', 'local']
+                sourceOrder: this.bot.config.searchSettings.queryEngines
             })
 
             queries = [...new Set(queries.map(q => q.trim()).filter(Boolean))]
@@ -133,7 +133,7 @@ export class Search extends Workers {
                     const extra = await queryCore.queryManager({
                         shuffle: true,
                         related: true,
-                        langCode,
+                        langCode: langCode,
                         geoLocale: locale,
                         sourceOrder: this.bot.config.searchSettings.queryEngines
                     })
@@ -160,7 +160,7 @@ export class Search extends Workers {
                     const extra = await queryCore.queryManager({
                         shuffle: true,
                         related: true,
-                        langCode,
+                        langCode: langCode,
                         geoLocale: locale,
                         sourceOrder: this.bot.config.searchSettings.queryEngines
                     })

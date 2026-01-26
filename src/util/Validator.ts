@@ -20,7 +20,7 @@ const DelaySchema = z.object({
     max: NumberOrString
 })
 
-const QueryEngineSchema = z.enum(['google', 'wikipedia', 'reddit', 'local'])
+const QueryEngineSchema = z.enum(['china', 'google', 'wikipedia', 'reddit', 'local'])
 
 // Webhook
 const WebhookSchema = z.object({
@@ -55,6 +55,7 @@ export const ConfigSchema = z.object({
     workers: z.object({
         doDailySet: z.boolean(),
         doSpecialPromotions: z.boolean(),
+        doPointClaimPromotion: z.boolean(),
         doMorePromotions: z.boolean(),
         doPunchCards: z.boolean(),
         doAppPromotions: z.boolean(),

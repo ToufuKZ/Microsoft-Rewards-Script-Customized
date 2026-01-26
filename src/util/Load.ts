@@ -5,6 +5,7 @@ import path from 'path'
 
 import type { Account, ConfigSaveFingerprint } from '../interface/Account'
 import type { Config } from '../interface/Config'
+import type { DashboardData } from '../interface/DashboardData'
 import { validateAccounts, validateConfig } from './Validator'
 
 let configCache: Config
@@ -121,6 +122,28 @@ export async function saveFingerprintData(
         }
 
         await fs.promises.writeFile(path.join(sessionDir, fingerprintFileName), JSON.stringify(fingerpint))
+
+        return sessionDir
+    } catch (error) {
+        throw new Error(error as string)
+    }
+}
+
+export async function saveDashboardData(
+    sessionPath: string,
+    email: string,
+    isMobile: boolean,
+    dashboardData: DashboardData
+): Promise<string> {
+    try {
+        const sessionDir = path.join(__dirname, '../browser/', sessionPath, email)
+        const dashboardFileName = isMobile ? 'dashboard_mobile.json' : 'dashboard_desktop.json'
+
+        if (!fs.existsSync(sessionDir)) {
+            await fs.promises.mkdir(sessionDir, { recursive: true })
+        }
+
+        await fs.promises.writeFile(path.join(sessionDir, dashboardFileName), JSON.stringify(dashboardData))
 
         return sessionDir
     } catch (error) {

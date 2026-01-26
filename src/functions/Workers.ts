@@ -172,6 +172,91 @@ export class Workers {
         this.bot.logger.info(this.bot.isMobile, 'SPECIAL-ACTIVITY', 'All "Special Activites" items have been completed')
     }
 
+    public async doPointClaimBannerPromotion(data: DashboardData) {
+        const pointClaimBannerPromotion = data.pointClaimBannerPromotion
+
+        if (!pointClaimBannerPromotion) {
+            this.bot.logger.info(
+                this.bot.isMobile,
+                'CLAIM-POINTS',
+                'No "Point Claim Banner" promotion found'
+            )
+            return
+        }
+
+        if (pointClaimBannerPromotion.complete) {
+            this.bot.logger.info(
+                this.bot.isMobile,
+                'CLAIM-POINTS',
+                '"Point Claim Banner" promotion has already been completed'
+            )
+            return
+        }
+
+        try {
+            const type = pointClaimBannerPromotion.promotionType?.toLowerCase() ?? ''
+            const offerId = pointClaimBannerPromotion.offerId
+            const claim_points = (pointClaimBannerPromotion.attributes as any).claimable_points ?? 0
+
+            this.bot.logger.debug(
+                this.bot.isMobile,
+                'CLAIM-POINTS',
+                `Processing promotion | title="${pointClaimBannerPromotion.title}" | offerId=${offerId} | type=${type} | claim_points=${claim_points}`
+            )
+
+            await this.bot.activities.doClaimPoints(pointClaimBannerPromotion)
+
+        } catch (error) {
+            this.bot.logger.error(
+                this.bot.isMobile,
+                'CLAIM-POINTS',
+                `Error while processing promotion "${pointClaimBannerPromotion.title}" | message=${error instanceof Error ? error.message : String(error)}`
+            )
+        }
+
+        this.bot.logger.info(this.bot.isMobile, 'CLAIM-POINTS', '"Point Claim Banner" promotion processing completed')
+    }
+
+    public async doPunchCards(data: DashboardData, page: Page) {
+        const punchCards = data.punchCards ?? []
+
+        if (!punchCards.length) {
+            this.bot.logger.info(this.bot.isMobile, 'PUNCH-CARD', 'No "Punch Cards" items found')
+            return
+        }
+
+        for (const punchCard of punchCards) {
+            const parentPromotion = punchCard.parentPromotion ?? {}
+
+            if (parentPromotion.complete) {
+                this.bot.logger.debug(this.bot.isMobile, 'PUNCH-CARD', `"Punch Card" "${parentPromotion.title}" has already been completed`)
+                continue
+            }
+
+            const childPromotions = punchCard.childPromotions ?? []
+
+            if (!childPromotions.length) {
+                this.bot.logger.debug(this.bot.isMobile, 'PUNCH-CARD', `"Punch Card" "${parentPromotion.title}" has no child activities`)
+                continue
+            }
+
+            const availableChildPromotions = childPromotions.filter((promotion) => !promotion.complete && promotion.attributes.is_unlocked === "True")
+
+            if (!availableChildPromotions.length) {
+                this.bot.logger.debug(this.bot.isMobile, 'PUNCH-CARD', `"Punch Card" "${parentPromotion.title}" have no available child activities`)
+                continue
+            }
+
+            this.bot.logger.info(this.bot.isMobile, 'PUNCH-CARD', `Started solving "Punch Card" | title="${parentPromotion.title}" | availableItems=${availableChildPromotions.length}`)
+
+            await this.solveActivities(availableChildPromotions, page, punchCard)
+
+            this.bot.logger.info(this.bot.isMobile, 'PUNCH-CARD', `Finished solving "Punch Card" | title="${parentPromotion.title}"`)
+        }
+        
+        this.bot.logger.info(this.bot.isMobile, 'PUNCH-CARD', 'All "Punch Cards" have been completed')
+    }
+
     private async solveActivities(activities: BasePromotion[], page: Page, punchCard?: PunchCard) {
         for (const activity of activities) {
             try {

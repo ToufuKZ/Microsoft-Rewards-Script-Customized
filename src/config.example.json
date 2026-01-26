@@ -8,6 +8,7 @@
     "workers": {
         "doDailySet": true,
         "doSpecialPromotions": true,
+        "doPointClaimPromotion": true,
         "doMorePromotions": true,
         "doPunchCards": true,
         "doAppPromotions": true,

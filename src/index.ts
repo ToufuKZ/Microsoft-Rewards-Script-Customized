@@ -11,7 +11,7 @@ import BrowserUtils from './browser/BrowserUtils'
 
 import { IpcLog, Logger } from './logging/Logger'
 import Utils from './util/Utils'
-import { loadAccounts, loadConfig } from './util/Load'
+import { loadAccounts, loadConfig, saveDashboardData } from './util/Load'
 import { checkNodeVersion } from './util/Validator'
 
 import { Login } from './browser/auth/Login'
@@ -101,8 +101,8 @@ export class MicrosoftRewardsBot {
     constructor() {
         this.userData = {
             userName: '',
-            geoLocale: 'US',
-            langCode: 'en',
+            geoLocale: 'cn',
+            langCode: 'zh',
             initialPoints: 0,
             currentPoints: 0,
             gainedPoints: 0
@@ -386,6 +386,22 @@ export class MicrosoftRewardsBot {
 
                 const data: DashboardData = await this.browser.func.getDashboardData()
                 const appData: AppDashboardData = await this.browser.func.getAppDashboardData()
+                
+                // Save dashboard data
+                this.logger.info(
+                    'main',
+                    'DASHBOARD',
+                    `Saving dashboard data for ${accountEmail}`
+                )
+                await saveDashboardData(
+                    this.config.sessionPath,
+                    accountEmail,
+                    true,
+                    data
+                )
+
+                // Set langCode
+                this.userData.langCode = account.langCode || 'en'
 
                 // Set geo
                 this.userData.geoLocale =
@@ -418,7 +434,9 @@ export class MicrosoftRewardsBot {
                 if (this.config.workers.doAppPromotions) await this.workers.doAppPromotions(appData)
                 if (this.config.workers.doDailySet) await this.workers.doDailySet(data, this.mainMobilePage)
                 if (this.config.workers.doSpecialPromotions) await this.workers.doSpecialPromotions(data)
+                if (this.config.workers.doPointClaimPromotion) await this.workers.doPointClaimBannerPromotion(data)
                 if (this.config.workers.doMorePromotions) await this.workers.doMorePromotions(data, this.mainMobilePage)
+                if (this.config.workers.doPunchCards) await this.workers.doPunchCards(data, this.mainMobilePage)
                 if (this.config.workers.doDailyCheckIn) await this.activities.doDailyCheckIn()
                 if (this.config.workers.doReadToEarn) await this.activities.doReadToEarn()
 

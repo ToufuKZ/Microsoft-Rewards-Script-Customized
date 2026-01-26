@@ -27,7 +27,7 @@ export interface DashboardData {
     coupons: unknown[]
     couponBannerPromotion: null
     popUpPromotions: BingUfMachineTranslationPromo
-    pointClaimBannerPromotion: null
+    pointClaimBannerPromotion: PromotionalItem
     highValueSweepstakesPromotions: HighValueSweepstakesPromotion[]
     revIpCountryName: null
     shareAndWinPromotion: null

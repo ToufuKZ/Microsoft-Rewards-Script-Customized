@@ -224,7 +224,7 @@ export default class BrowserFunc {
                 headers: {
                     Authorization: `Bearer ${this.bot.accessToken}`,
                     'X-Rewards-Country': this.bot.userData.geoLocale,
-                    'X-Rewards-Language': 'en',
+                    'X-Rewards-Language': this.bot.userData.langCode,
                     'X-Rewards-ismobile': 'true'
                 }
             }
