@@ -75,7 +75,7 @@ class Browser {
                 this.bot.isMobile
             )
 
-            const fingerprint = sessionData.fingerprint ?? (await this.generateFingerprint(this.bot.isMobile))
+            const fingerprint = sessionData.fingerprint ?? (await this.generateFingerprint(this.bot.isMobile, account.langCode === 'auto' ? '' : account.langCode))
 
             const context = await newInjectedContext(browser as any, { fingerprint })
 
@@ -123,11 +123,12 @@ class Browser {
         }
     }
 
-    async generateFingerprint(isMobile: boolean) {
+    async generateFingerprint(isMobile: boolean, locale: string): Promise<BrowserFingerprintWithHeaders> {
         const fingerPrintData = new FingerprintGenerator().getFingerprint({
             devices: isMobile ? ['mobile'] : ['desktop'],
             operatingSystems: isMobile ? ['android', 'ios'] : ['windows', 'linux'],
-            browsers: [{ name: 'edge' }]
+            browsers: [{ name: 'edge' }],
+            locales: locale ? [locale] : ['en-US'],
         })
 
         const userAgentManager = new UserAgentManager(this.bot)
