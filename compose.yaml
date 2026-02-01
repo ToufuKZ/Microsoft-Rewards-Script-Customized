@@ -2,6 +2,8 @@ services:
     microsoft-rewards-script:
         build: .
         container_name: microsoft-rewards-script
+        image: microsoft-rewards-script:latest
+        network_mode: bridge
         restart: unless-stopped
 
         # Create and customize your accounts.json and config.json prior to deploying the container (default location: /src/)
@@ -11,7 +13,7 @@ services:
             - ./sessions:/usr/src/microsoft-rewards-script/dist/browser/sessions
 
         environment:
-            TZ: 'America/Toronto' # Set your timezone for proper scheduling
+            TZ: 'Asia/Shanghai' # Set your timezone for proper scheduling
             NODE_ENV: 'production'
             CRON_SCHEDULE: '0 7 * * *' # Customize your schedule, use crontab.guru for formatting
             RUN_ON_START: 'true' # Runs the script immediately on container startup

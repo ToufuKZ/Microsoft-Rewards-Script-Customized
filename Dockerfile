@@ -45,7 +45,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gettext-base \
     tzdata \
     ca-certificates \
-    git \
     libglib2.0-0 \
     libdbus-1-3 \
     libexpat1 \
@@ -82,7 +81,6 @@ COPY --from=builder /usr/src/microsoft-rewards-script/node_modules ./node_module
 
 # Copy runtime scripts with proper permissions from the start
 COPY --chmod=755 scripts/docker/run_daily.sh ./scripts/docker/run_daily.sh
-COPY --chmod=755 scripts/docker/update.sh ./scripts/docker/update.sh
 COPY --chmod=644 src/crontab.template /etc/cron.d/microsoft-rewards-cron.template
 COPY --chmod=755 scripts/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
