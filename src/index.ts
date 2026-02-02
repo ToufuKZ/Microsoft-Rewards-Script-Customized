@@ -11,6 +11,7 @@ import BrowserUtils from './browser/BrowserUtils'
 
 import { IpcLog, Logger } from './logging/Logger'
 import Utils from './util/Utils'
+import { StoreUserInfo } from './functions/StoreUserInfo'
 import { loadAccounts, loadConfig, saveDashboardData } from './util/Load'
 import { checkNodeVersion } from './util/Validator'
 
@@ -61,6 +62,7 @@ async function flushAllWebhooks(timeoutMs = 5000): Promise<void> {
 }
 
 interface UserData {
+    email: string
     userName: string
     geoLocale: string
     langCode: string
@@ -100,6 +102,7 @@ export class MicrosoftRewardsBot {
 
     constructor() {
         this.userData = {
+            email: '',
             userName: '',
             geoLocale: 'cn',
             langCode: 'zh',
@@ -259,6 +262,7 @@ export class MicrosoftRewardsBot {
         for (const account of accounts) {
             const accountStartTime = Date.now()
             const accountEmail = account.email
+            this.userData.email = accountEmail
             this.userData.userName = this.utils.getEmailUsername(accountEmail)
 
             try {
@@ -303,6 +307,26 @@ export class MicrosoftRewardsBot {
                         `Completed account: ${accountEmail} | Total: +${collectedPoints} | Old: ${accountInitialPoints} → New: ${accountFinalPoints} | Duration: ${durationSeconds}s`,
                         'green'
                     )
+                    
+                    // 在最终collectedPoints后StoreUserInfo
+                    if (this.config.database?.enabled) {
+                        try {
+                            this.logger.info(
+                                'main',
+                                'STORE-USER-INFO',
+                                `Storing user info for ${accountEmail} after collecting ${collectedPoints} points`
+                            )
+                            
+                            const storeUserInfo = new StoreUserInfo(this)
+                            await storeUserInfo.doStoreUserInfo()
+                        } catch (error) {
+                            this.logger.error(
+                                'main',
+                                'STORE-USER-INFO',
+                                `Failed to store user info: ${error instanceof Error ? error.message : String(error)}`
+                            )
+                        }
+                    }
                 } else {
                     accountStats.push({
                         email: accountEmail,

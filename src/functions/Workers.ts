@@ -240,7 +240,7 @@ export class Workers {
                 continue
             }
 
-            const availableChildPromotions = childPromotions.filter((promotion) => !promotion.complete && promotion.attributes.is_unlocked === "True")
+            const availableChildPromotions = childPromotions.filter((promotion) => !promotion.complete && !(promotion.attributes.is_unlocked === "False"))
 
             if (!availableChildPromotions.length) {
                 this.bot.logger.debug(this.bot.isMobile, 'PUNCH-CARD', `"Punch Card" "${parentPromotion.title}" have no available child activities`)

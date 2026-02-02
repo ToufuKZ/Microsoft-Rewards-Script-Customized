@@ -13,6 +13,17 @@ export interface Config {
     proxy: ConfigProxy
     consoleLogFilter: LogFilter
     webhook: ConfigWebhook
+    database?: ConfigDatabase
+}
+
+export interface ConfigDatabase {
+    enabled: boolean
+    host: string
+    port: number
+    user: string
+    password: string
+    database: string
+    groupName: string
 }
 
 export type QueryEngine = 'china' | 'google' | 'wikipedia' | 'reddit' | 'local'
