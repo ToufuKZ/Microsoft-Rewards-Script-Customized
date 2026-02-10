@@ -75,5 +75,16 @@
         "password": "your_password",
         "database": "microsoft_rewards",
         "groupName": "default"
+    },
+    "defaultSearchEngineParams": [
+        "FORM=ANNTA1&PC=U531",
+        "FORM=ANSPA1&PC=CNNDDB",
+        "FORM=ANNTH14&PC=U531",
+        "FROM=CHROMN&PC=U316"
+    ],
+    "notify": {
+        "enabled": false,
+        "url": "https://api.day.app",
+        "device_key": "your_bark_device_key"
     }
 }

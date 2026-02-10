@@ -18,6 +18,14 @@ export class ClaimPoints extends Workers {
                 'CLAIM-POINTS',
                 'Skipping: Request token not available, this activity requires it!'
             )
+            
+            // 发送 Bark 通知
+            await this.bot.notify.bark(
+                'CLAIM-POINTS 任务跳过',
+                `${this.bot.userData.email}: Request token 不可用, CLAIM-POINTS 跳过`,
+                'Rewards'
+            )
+
             return
         }
 

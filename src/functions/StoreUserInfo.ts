@@ -2,20 +2,18 @@ import type { AxiosRequestConfig } from 'axios'
 import { Workers } from './Workers'
 import { Database } from '../util/Database'
 
-export interface RewardsUserInfo {
+export interface RewardsInfo {
     userInfo: UserInfo
     isError: boolean
-    errorMessage: null
     isRewardsUser: boolean
+    flyoutResult: FlyoutResult
 }
 
 export interface UserInfo {
-    isRewardsUser: boolean
     balance: number
     errorCode: number
-    errorMessage: null
+    errorMessage: string
     rewardsCountry: string
-    autoRedeemItem: null
     orders: Order[]
 }
 
@@ -43,6 +41,50 @@ export interface OrderDetail {
     createdAt: string
 }
 
+export interface FlyoutResult {
+    levelInfoPromotion: {
+        attributes: {
+            level: string
+            todays_points: string // 今日奖励点数
+            hva_dse_days: string // 本月默认搜索引擎天数
+            hva_dse_days_max: string // 本月默认搜索引擎目标天数
+            pointclaim_progress_dsebonus: string // 上月默认搜索引擎奖励
+            program_restructure_monthly_dse_bonus_max: string // 上月默认搜索引擎奖励最大值
+            program_restructure_monthly_dse_bonus_state: string // 上月默认搜索引擎奖励状态
+            pointclaim_progress_gooduserbonus: string // 上月star奖励
+            program_restructure_good_user_bonus_max: string // 上月star奖励最大值
+            program_restructure_good_user_bonus_state: string // 上月star奖励状态
+            program_restructure_good_user_bonus_progress: string // 本月star奖励进度
+            pointclaim_progress_levelbonus: string // 上月升级奖励
+            program_restructure_monthly_level_bonus_max: string // 上月升级奖励最大值
+            program_restructure_monthly_level_bonus_state: string // 上月升级奖励状态
+        }
+    }
+}
+
+export interface UserInfoStore {
+    balance: number;
+    isRewardsUser: boolean;
+    isError: boolean;
+    errorCode: number;
+    errorMessage: string;
+    level: string;
+    todaysPoints: string;
+    dseDays: string;
+    dseDaysMax: string;
+    dseBonus: string;
+    dseBonusMax: string;
+    dseBonusClaimed: string;
+    levelBonus: string;
+    levelBonusMax: string;
+    levelBonusClaimed: string;
+    starBonus: string;
+    starBonusMax: string;
+    starBonusClaimed: string;
+    starBonusProgress: string;
+    orders: Order[];
+}
+
 export class StoreUserInfo extends Workers {
     private cookieHeader: string = ''
     private fingerprintHeader: { [x: string]: string } = {}
@@ -50,7 +92,7 @@ export class StoreUserInfo extends Workers {
 
     public async doStoreUserInfo() {
         this.bot.logger.info(
-            this.bot.isMobile,
+            'main',
             'STORE-USER-INFO',
             'Starting Store User Info'  
         )
@@ -63,10 +105,10 @@ export class StoreUserInfo extends Workers {
             this.buildRequestHeaders()
             
             // 获取用户信息
-            const userInfo = await this.fetchUserInfo()
+            const rewardsInfo = await this.fetchRewardsInfo()
             
             // 处理用户信息
-            await this.processUserInfo(userInfo)
+            await this.processRewardsInfo(rewardsInfo)
             
             await this.bot.utils.wait(this.bot.utils.randomDelay(5000, 10000))
         } catch (error) {
@@ -123,14 +165,7 @@ export class StoreUserInfo extends Workers {
         )
     }
 
-    private async fetchUserInfo(): Promise<{
-        currentBalance: number;
-        isRewardsUser: boolean;
-        isError: boolean;
-        errorCode: number;
-        errorMessage: string;
-        orders: Order[];
-    }> {
+    private async fetchRewardsInfo(): Promise<RewardsInfo> {
         const request: AxiosRequestConfig = {
             url: 'https://cn.bing.com/rewards/panelflyout/getuserinfo?channel=BingFlyout&partnerId=BingRewards',
             method: 'GET',
@@ -156,32 +191,25 @@ export class StoreUserInfo extends Workers {
             `Received Get User Info response | status=${response.status}`
         )
 
-        const rewardsUserInfo: RewardsUserInfo = response.data
+        let rewardsUserInfo: RewardsInfo = response.data
+        rewardsUserInfo.userInfo.errorMessage = rewardsUserInfo.userInfo.errorMessage || 'N/A'
 
-        return {
-            currentBalance: rewardsUserInfo.userInfo.balance,
-            isRewardsUser: rewardsUserInfo.userInfo.isRewardsUser,
-            isError: rewardsUserInfo.isError,
-            errorCode: rewardsUserInfo.userInfo.errorCode,
-            errorMessage: rewardsUserInfo.userInfo.errorMessage || 'N/A',
-            orders: rewardsUserInfo.userInfo.orders
-        }
+        return rewardsUserInfo
     }
 
-    private async processUserInfo(userInfo: {
-        currentBalance: number;
-        isRewardsUser: boolean;
-        isError: boolean;
-        errorCode: number;
-        errorMessage: string;
-        orders: Order[];
-    }): Promise<void> {
-        const { currentBalance, isRewardsUser, isError, errorCode, errorMessage } = userInfo
+    private async processRewardsInfo(rewardsUserInfo: RewardsInfo): Promise<void> {
+        const { errorCode, errorMessage, balance } = rewardsUserInfo.userInfo
+        const { isRewardsUser, isError } = rewardsUserInfo
+
+        // 用户等级
+        const level = rewardsUserInfo.flyoutResult.levelInfoPromotion?.attributes?.level
+        // 今日奖励点数
+        const todaysPoints = rewardsUserInfo.flyoutResult.levelInfoPromotion?.attributes?.todays_points
 
         this.bot.logger.info(
             'main',
             'STORE-USER-INFO',
-            `User Info | currentBalance=${currentBalance} | isRewardsUser=${isRewardsUser} | isError=${isError}`
+            `User Info | level=${level} | todaysPoints=${todaysPoints} | currentBalance=${balance} | isRewardsUser=${isRewardsUser} | isError=${isError}`
         )
 
         if (!isRewardsUser) {
@@ -199,46 +227,122 @@ export class StoreUserInfo extends Workers {
                 `User Has Being Warned |  isError=${isError} | errorCode=${errorCode} | errorMessage=${errorMessage}`
             )
         }
+
+        const levelInfoPromotion = rewardsUserInfo.flyoutResult.levelInfoPromotion?.attributes
+
+        // 默认浏览器搜索天数
+        const dseDays = levelInfoPromotion?.hva_dse_days
+        // 默认浏览器搜索每月目标天数
+        const dseDaysMax = levelInfoPromotion?.hva_dse_days_max
+
+        // 上月默认浏览器搜索奖励分数
+        const dseBonus = levelInfoPromotion?.pointclaim_progress_dsebonus
+        // 上月默认浏览器搜索奖励分数上限 210
+        const dseBonusMax = levelInfoPromotion?.program_restructure_monthly_dse_bonus_max
+        // 上月默认浏览器搜索奖励分数领取状态
+        const dseBonusClaimed = levelInfoPromotion?.program_restructure_monthly_dse_bonus_state
+
+        // 上月等级奖励分数
+        const levelBonus = levelInfoPromotion?.pointclaim_progress_levelbonus
+        // 上月等级奖励分数上限 420
+        const levelBonusMax = levelInfoPromotion?.program_restructure_monthly_level_bonus_max
+        // 上月等级奖励分数领取状态
+        const levelBonusClaimed = levelInfoPromotion?.program_restructure_good_user_bonus_state
+
+        // 上月必应Star奖励分数
+        const starBonus = levelInfoPromotion?.pointclaim_progress_gooduserbonus
+        // 上月必应Star奖励分数上限 2100
+        const starBonusMax = levelInfoPromotion?.program_restructure_good_user_bonus_max
+        // 上月必应Star奖励分数领取状态
+        const starBonusClaimed = levelInfoPromotion?.program_restructure_good_user_bonus_state
+        // 本月必应Star奖励分数进度
+        const starBonusProgress = levelInfoPromotion?.program_restructure_good_user_bonus_progress
+
+        this.bot.logger.info(
+            'main',
+            'STORE-USER-INFO',
+            `User Daily Rewards | dseDays=${dseDays}/${dseDaysMax}`
+        )
+
+        this.bot.logger.info(
+            'main',
+            'STORE-USER-INFO',
+            `User Last Month Bonus | dseBonus=${dseBonus}/${dseBonusMax} dseBonusClaimed=${dseBonusClaimed} | levelBonus=${levelBonus}/${levelBonusMax} levelBonusClaimed=${levelBonusClaimed} | starBonus=${starBonus}/${starBonusMax} starBonusClaimed=${starBonusClaimed} starBonusProgress=${starBonusProgress}`
+        )
+
+        const orders = rewardsUserInfo.userInfo.orders || []
         
+        const storeInfo: UserInfoStore = {
+            balance,
+            isRewardsUser,
+            isError,
+            errorCode,
+            errorMessage,
+            orders,
+            level,
+            todaysPoints,
+            dseDays,
+            dseDaysMax,
+            dseBonus,
+            dseBonusMax,
+            dseBonusClaimed,
+            levelBonus,
+            levelBonusMax,
+            levelBonusClaimed,
+            starBonus,
+            starBonusMax,
+            starBonusClaimed,
+            starBonusProgress,
+        }
         // 保存数据到数据库
-        await this.saveUserInfoToDatabase(userInfo)
+        await this.saveRewardsUserInfoToDatabase(storeInfo)
     }
 
-    private async saveUserInfoToDatabase(userInfo: {
-        currentBalance: number;
-        isRewardsUser: boolean;
-        isError: boolean;
-        errorCode: number;
-        errorMessage: string;
-        orders: Order[];
-    }): Promise<void> {
+    private async saveRewardsUserInfoToDatabase(userInfo: UserInfoStore): Promise<void> {
         if (!this.localDatabase) return
 
         try {
             const email = this.bot.userData.email
-            const { currentBalance, isRewardsUser, isError, errorCode, errorMessage, orders } = userInfo
-            
-            // 保存积分信息
-            await this.localDatabase.savePoints(email, currentBalance)
             
             // 保存订单信息
-            if (orders && orders.length > 0) {
-                await this.localDatabase.saveOrders(email, orders)
+            if (userInfo.orders && userInfo.orders.length > 0) {
+                await this.localDatabase.saveOrders(email, userInfo.orders)
             }
             
             // 保存奖励用户信息
-            await this.localDatabase.saveRewardInfo(email, isRewardsUser, isError, errorCode, errorMessage)
+            await this.localDatabase.saveRewardInfo(
+                email, 
+                userInfo.balance,
+                userInfo.isRewardsUser, 
+                userInfo.isError, 
+                userInfo.errorCode, 
+                userInfo.errorMessage,
+                userInfo.level,
+                userInfo.todaysPoints,
+                userInfo.dseDays,
+                userInfo.dseDaysMax,
+                userInfo.dseBonus,
+                userInfo.dseBonusMax,
+                userInfo.dseBonusClaimed,
+                userInfo.levelBonus,
+                userInfo.levelBonusMax,
+                userInfo.levelBonusClaimed,
+                userInfo.starBonus,
+                userInfo.starBonusMax,
+                userInfo.starBonusClaimed,
+                userInfo.starBonusProgress,
+            )
             
             this.bot.logger.info(
                 'main',
                 'STORE-USER-INFO',
-                `Successfully Saved User Info To Database`
+                `Successfully Saved Rewards User Info To Database`
             )
         } catch (error) {
             this.bot.logger.error(
                 'main',
                 'STORE-USER-INFO',
-                `Failed To Save User Info To Database: ${error instanceof Error ? error.message : String(error)}`
+                `Failed To Save Rewards User Info To Database: ${error instanceof Error ? error.message : String(error)}`
             )
         }
     }

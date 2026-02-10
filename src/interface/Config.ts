@@ -14,6 +14,14 @@ export interface Config {
     consoleLogFilter: LogFilter
     webhook: ConfigWebhook
     database?: ConfigDatabase
+    defaultSearchEngineParams?: string[]
+    notify?: ConfigNotify
+}
+
+export interface ConfigNotify {
+    enabled: boolean
+    url: string
+    device_key: string
 }
 
 export interface ConfigDatabase {

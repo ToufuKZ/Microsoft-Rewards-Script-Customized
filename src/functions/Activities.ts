@@ -15,6 +15,7 @@ import { ClaimPoints } from './activities/api/ClaimPoints'
 
 // Browser
 import { SearchOnBing } from './activities/browser/SearchOnBing'
+import { SearchOnDefaultSearchEngine } from './activities/browser/SearchOnDefaultSearchEngine'
 import { Search } from './activities/browser/Search'
 
 import type {
@@ -42,6 +43,11 @@ export default class Activities {
     doSearchOnBing = async (promotion: BasePromotion, page: Page): Promise<void> => {
         const searchOnBing = new SearchOnBing(this.bot)
         await searchOnBing.doSearchOnBing(promotion, page)
+    }
+
+    doSearchOnDefaultSearchEngine = async (data: DashboardData, page: Page, isMobile: boolean): Promise<void> => {
+        const searchOnDefaultSearchEngine = new SearchOnDefaultSearchEngine(this.bot)
+        await searchOnDefaultSearchEngine.doSearchOnDefaultSearchEngine(data, page, isMobile)
     }
 
     /*

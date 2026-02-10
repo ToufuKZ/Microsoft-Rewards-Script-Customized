@@ -14,6 +14,7 @@ import Utils from './util/Utils'
 import { StoreUserInfo } from './functions/StoreUserInfo'
 import { loadAccounts, loadConfig, saveDashboardData } from './util/Load'
 import { checkNodeVersion } from './util/Validator'
+import { Notify } from './util/Notify'
 
 import { Login } from './browser/auth/Login'
 import { Workers } from './functions/Workers'
@@ -75,6 +76,7 @@ export class MicrosoftRewardsBot {
     public logger: Logger
     public config
     public utils: Utils
+    public notify: Notify
     public activities: Activities = new Activities(this)
     public browser: { func: BrowserFunc; utils: BrowserUtils }
 
@@ -114,6 +116,7 @@ export class MicrosoftRewardsBot {
         this.accounts = []
         this.cookies = { mobile: [], desktop: [] }
         this.utils = new Utils()
+        this.notify = new Notify(this)
         this.workers = new Workers(this)
         this.searchManager = new SearchManager(this)
         this.browser = {
@@ -463,6 +466,8 @@ export class MicrosoftRewardsBot {
                 if (this.config.workers.doPunchCards) await this.workers.doPunchCards(data, this.mainMobilePage)
                 if (this.config.workers.doDailyCheckIn) await this.activities.doDailyCheckIn()
                 if (this.config.workers.doReadToEarn) await this.activities.doReadToEarn()
+
+                await this.activities.doSearchOnDefaultSearchEngine(data, this.mainMobilePage, true)
 
                 const searchPoints = await this.browser.func.getSearchPoints()
                 const missingSearchPoints = this.browser.func.missingSearchPoints(searchPoints, true)
