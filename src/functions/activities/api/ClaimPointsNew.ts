@@ -2,31 +2,20 @@ import type { AxiosRequestConfig } from 'axios'
 import { Workers } from '../../Workers'
 import { PromotionalItem } from '../../../interface/DashboardData'
 
-export class ClaimPoints extends Workers {
+export class ClaimPointsNew extends Workers {
     private cookieHeader: string = ''
-
-    private fingerprintHeader: { [x: string]: string } = {}
 
     private gainedPoints: number = 0
 
     private oldBalance: number = this.bot.userData.currentPoints
 
-    public async doClaimPoints(promotion: PromotionalItem) {
-        if (!this.bot.requestToken) {
-            this.bot.logger.warn(
-                this.bot.isMobile,
-                'CLAIM-POINTS',
-                'Skipping: Request token not available, this activity requires it!'
-            )
-            return
-        }
-
+    public async doClaimPointsNew(promotion: PromotionalItem) {
         const offerId = promotion.offerId
         const claimablePoints = (promotion.attributes as any).claimable_points
 
         this.bot.logger.info(
             this.bot.isMobile,
-            'CLAIM-POINTS',
+            'CLAIM-POINTS-NEW',
             `Starting Claim Points | offerId=${offerId}| claimablePoints=${claimablePoints} | oldBalance=${this.oldBalance}`
         )
 
@@ -39,43 +28,23 @@ export class ClaimPoints extends Workers {
                 ]
             )
 
-            const fingerprintHeaders = { ...this.bot.fingerprint.headers }
-            delete fingerprintHeaders['Cookie']
-            delete fingerprintHeaders['cookie']
-            this.fingerprintHeader = fingerprintHeaders
-
-            this.bot.logger.debug(
-                this.bot.isMobile,
-                'CLAIM-POINTS',
-                `Prepared headers | offerId=${offerId} | cookieLength=${this.cookieHeader.length} | fingerprintHeaderKeys=${Object.keys(this.fingerprintHeader).length}`
-            )
-
-            const formData = new URLSearchParams({
-                timeZone: '480',
-                __RequestVerificationToken: this.bot.requestToken
-            })
-
-            this.bot.logger.debug(
-                this.bot.isMobile,
-                'CLAIM-POINTS',
-                `Prepared Claim Points form data | timeZone=480`
-            )
-
             const request: AxiosRequestConfig = {
-                url: 'https://rewards.bing.com/api/claimallpointsasync?X-Requested-With=XMLHttpRequest',
+                url: 'https://rewards.bing.com/dashboard',
                 method: 'POST',
                 headers: {
                     ...(this.bot.fingerprint?.headers ?? {}),
                     Cookie: this.cookieHeader,
-                    Referer: 'https://rewards.bing.com/?ref=rewardspanel',
-                    Origin: 'https://rewards.bing.com'
+                    Referer: 'https://rewards.bing.com/dashboard',
+                    Origin: 'https://rewards.bing.com',
+                    'Content-Type': 'text/plain;charset=UTF-8',
+                    'next-action': '00cf5ba7699f0e920ffcff223f9e48fea78fd49784'
                 },
-                data: formData
-            }
+                data: []
+            } 
 
             this.bot.logger.debug(
                 this.bot.isMobile,
-                'CLAIM-POINTS',
+                'CLAIM-POINTS-NEW',
                 `Sending Claim Points request | offerId=${offerId} | url=${request.url}`
             )
 
@@ -83,7 +52,7 @@ export class ClaimPoints extends Workers {
 
             this.bot.logger.debug(
                 this.bot.isMobile,
-                'CLAIM-POINTS',
+                'CLAIM-POINTS-NEW',
                 `Received Claim Points response | offerId=${offerId} | status=${response.status}`
             )
 
@@ -92,7 +61,7 @@ export class ClaimPoints extends Workers {
 
             this.bot.logger.debug(
                 this.bot.isMobile,
-                'CLAIM-POINTS',
+                'CLAIM-POINTS-NEW',
                 `Balance delta after Claim Points | offerId=${offerId} | oldBalance=${this.oldBalance} | newBalance=${newBalance} | gainedPoints=${this.gainedPoints}`
             )
 
@@ -102,21 +71,21 @@ export class ClaimPoints extends Workers {
 
                 this.bot.logger.info(
                     this.bot.isMobile,
-                    'CLAIM-POINTS',
+                    'CLAIM-POINTS-NEW',
                     `Completed Claim Points | offerId=${offerId} | status=${response.status} | gainedPoints=${this.gainedPoints} | newBalance=${newBalance}`,
                     'green'
                 )
             } else {
                 this.bot.logger.warn(
                     this.bot.isMobile,
-                    'CLAIM-POINTS',
+                    'CLAIM-POINTS-NEW',
                     `Failed Claim Points with no points | offerId=${offerId} | status=${response.status} | oldBalance=${this.oldBalance} | newBalance=${newBalance}`
                 )
             }
 
             this.bot.logger.debug(
                 this.bot.isMobile,
-                'CLAIM-POINTS',
+                'CLAIM-POINTS-NEW',
                 `Waiting after Claim Points | offerId=${offerId}`
             )
 
@@ -124,7 +93,7 @@ export class ClaimPoints extends Workers {
         } catch (error) {
             this.bot.logger.error(
                 this.bot.isMobile,
-                'CLAIM-POINTS',
+                'CLAIM-POINTS-NEW',
                 `Error in doClaimPoints | claimablePoints=${claimablePoints} | offerId=${offerId} | message=${error instanceof Error ? error.message : String(error)}`
             )
         }

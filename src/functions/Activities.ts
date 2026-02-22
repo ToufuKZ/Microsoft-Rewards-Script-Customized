@@ -8,10 +8,13 @@ import { AppReward } from './activities/app/AppReward'
 
 // API
 import { UrlReward } from './activities/api/UrlReward'
+import { UrlRewardNew } from './activities/api/UrlRewardNew'
 import { Quiz } from './activities/api/Quiz'
 import { FindClippy } from './activities/api/FindClippy'
 import { DoubleSearchPoints } from './activities/api/DoubleSearchPoints'
 import { ClaimPoints } from './activities/api/ClaimPoints'
+import { ClaimPointsNew } from './activities/api/ClaimPointsNew'
+
 
 // Browser
 import { SearchOnBing } from './activities/browser/SearchOnBing'
@@ -77,6 +80,12 @@ export default class Activities {
         await urlReward.doUrlReward(promotion)
     }
 
+    // New UI Activities
+    doUrlRewardNew = async (promotion: BasePromotion, hashUrl: string): Promise<void> => {
+        const urlRewardNew = new UrlRewardNew(this.bot)
+        await urlRewardNew.doUrlRewardNew(promotion, hashUrl)
+    }
+
     doQuiz = async (promotion: BasePromotion): Promise<void> => {
         const quiz = new Quiz(this.bot)
         await quiz.doQuiz(promotion)
@@ -95,6 +104,11 @@ export default class Activities {
     doClaimPoints = async (promotion: PromotionalItem): Promise<void> => {
         const claimPoints = new ClaimPoints(this.bot)
         await claimPoints.doClaimPoints(promotion)
+    }
+
+    doClaimPointsNew = async (promotion: PromotionalItem): Promise<void> => {
+        const claimPointsNew = new ClaimPointsNew(this.bot)
+        await claimPointsNew.doClaimPointsNew(promotion)
     }
 
     // App Activities

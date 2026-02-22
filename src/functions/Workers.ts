@@ -204,7 +204,17 @@ export class Workers {
                 `Processing promotion | title="${pointClaimBannerPromotion.title}" | offerId=${offerId} | type=${type} | claim_points=${claim_points}`
             )
 
-            await this.bot.activities.doClaimPoints(pointClaimBannerPromotion)
+            if (!this.bot.requestToken) {
+                this.bot.logger.info(
+                    this.bot.isMobile,
+                    'CLAIM-POINTS',
+                    `No RequestVerificationToken found, trying "ClaimPointsNew" | title="${pointClaimBannerPromotion.title}" | offerId=${offerId}`
+                )
+                await this.bot.activities.doClaimPointsNew(pointClaimBannerPromotion)
+            } else {
+                await this.bot.activities.doClaimPoints(pointClaimBannerPromotion)
+            } 
+            
 
         } catch (error) {
             this.bot.logger.error(
@@ -316,10 +326,33 @@ export class Workers {
                             this.bot.logger.info(
                                 this.bot.isMobile,
                                 'ACTIVITY',
-                                `Found activity type "UrlReward" | title="${activity.title}" | offerId=${offerId}`
+                                `Found activity type "UrlReward" | title="${activity.title}" | offerId=${offerId} | requestToken=${this.bot.requestToken.slice(0, 10)}...`
                             )
 
-                            await this.bot.activities.doUrlReward(basePromotion)
+                            if (!this.bot.requestToken) {
+                                this.bot.logger.debug(
+                                    this.bot.isMobile,
+                                    'ACTIVITY',
+                                    `No RequestVerificationToken found, trying "UrlRewardNew" | title="${activity.title}" | offerId=${offerId}`
+                                )
+                                if (punchCard){
+                                    const hashUrl = 'https://rewards.bing.com/earn/quest/' + punchCard.parentPromotion.offerId
+                                    await this.bot.activities.doUrlRewardNew(basePromotion, hashUrl)
+                                }else if (offerId?.includes('DailySet')) {
+                                    const hashUrl = 'https://rewards.bing.com/dashboard'
+                                    await this.bot.activities.doUrlRewardNew(basePromotion, hashUrl)
+                                }else {
+                                    const hashUrl = 'https://rewards.bing.com/earn'
+                                    await this.bot.activities.doUrlRewardNew(basePromotion, hashUrl)
+                                }
+                            } else {
+                                this.bot.logger.debug(
+                                    this.bot.isMobile,
+                                    'ACTIVITY',
+                                    `RequestVerificationToken found, trying "UrlReward" | title="${activity.title}" | offerId=${offerId}`
+                                )
+                                await this.bot.activities.doUrlReward(basePromotion)
+                            } 
                         }
                         break
                     }
