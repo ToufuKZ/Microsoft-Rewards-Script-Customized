@@ -31,7 +31,8 @@ export default class BrowserFunc {
                     Cookie: this.buildCookieHeader(this.bot.cookies.mobile, [
                         'bing.com',
                         'live.com',
-                        'microsoftonline.com'
+                        'microsoftonline.com',
+                        'windows.net'
                     ]),
                     Referer: 'https://rewards.bing.com/',
                     Origin: 'https://rewards.bing.com'
